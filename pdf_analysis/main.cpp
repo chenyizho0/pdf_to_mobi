@@ -7,6 +7,7 @@
 #include <vector>
 #include "tools.h"
 #include "trailer.h"
+#include "catalog.h"
 using namespace std;
 
 
@@ -99,6 +100,17 @@ public:
 	{
 		return trailer_.parse(readpdf_,traileroff);
 	}
+	int parseCatalog()
+	{
+		streamoff catalog_off;
+		int catalog_idx = trailer_.Root.idx();
+		catalog_off = vecCrossRef[catalog_idx].off;
+		return catalog_.parse(readpdf_,catalog_off);
+	}
+	Trailer getTrailer()
+	{
+		return this->trailer_;
+	}
 
 
 //for debug
@@ -111,7 +123,11 @@ public:
 	}
 	void printTrailer()
 	{
-		cout << trailer_.Size << " " << trailer_.Info.idx() << " " <<  trailer_.Root.idx() <<  endl;
+		trailer_.print();
+	}
+	void printCatalog()
+	{
+		catalog_.print();
 	}
 private:
 	
@@ -133,6 +149,7 @@ private:
 	vector<CrossRefItem> vecCrossRef;
 	vector<OBJ> vecObj;
 	Trailer trailer_;
+	Catalog catalog_;
 };
 
 
@@ -149,5 +166,7 @@ int main()
 	pdfread.printCrossTable();
 	iRet = pdfread.parseTrailer(off);
 	pdfread.printTrailer();
+	iRet = pdfread.parseCatalog();
+	pdfread.printCatalog();
 	return 0;
 }

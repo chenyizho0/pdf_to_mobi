@@ -84,6 +84,7 @@
     <ClInclude Include="catalog.h" />
     <ClInclude Include="Name.h" />
     <ClInclude Include="OBJ.h" />
+    <ClInclude Include="page.h" />
     <ClInclude Include="tools.h" />
     <ClInclude Include="trailer.h" />
   </ItemGroup>

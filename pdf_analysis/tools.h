@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include "OBJ.h"
+#include "Name.h"
 using namespace std;
 
 
@@ -36,6 +37,11 @@ int getContent(ifstream &readpdf, streamoff  off, string &sRes, int maxlen, stri
 	streamoff curoff = off;
 	while (true)
 	{
+		if (sBeg == "") //ø…ƒ‹”–bug
+		{
+			iBeg = curoff - 1;
+			break;
+		}
 		readpdf.read((char *)&c, sizeof(c));
 		int  k = 0;
 		if (c == sBeg[k])
@@ -51,11 +57,14 @@ int getContent(ifstream &readpdf, streamoff  off, string &sRes, int maxlen, stri
 			}
 			if (k == sBeg.size())
 			{
-				//cout << "beg" << endl;
 				iBeg = curoff;
 				break;
 			}
 			readpdf.seekg(curoff + 1, ios_base::beg);
+		}
+		if (curoff - off >= maxlen)
+		{
+			break;
 		}
 		curoff++;
 	}
@@ -255,5 +264,33 @@ int parseObj(string & sSrc, size_t &startpos, OBJ &obj)
 	return 0;
 }
 
+int parseName(string & sSrc, size_t &startpos, Name & n)
+{
+	n.name = "";
+	string s;
+	while (startpos < sSrc.size())
+	{
+		if (sSrc[startpos] != ' ' && sSrc[startpos] != '\n' && sSrc[startpos] != '\t')
+			break;
+		startpos++;
+	}
+	string tmpName;
+	for (; startpos < sSrc.size(); startpos++)
+	{
+		if (sSrc[startpos] == ' ' || sSrc[startpos] == '\n' || sSrc[startpos] == '\t')
+		{
+			break;
+		}
+		else
+		{
+			if (sSrc[startpos] != '/')
+			{
+				tmpName.append(1, sSrc[startpos]);
+			}
+		}
+	}
+	n.name = tmpName;
+	return 0;
+}
 
 #endif

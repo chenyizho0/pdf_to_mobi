@@ -9,6 +9,16 @@ class Trailer
 public:
 	Trailer()
 	{}
+	void print()
+	{
+		cout << "---------------" << endl;
+		cout << "Trailer :" << endl;
+		cout << "Size" << " " << Size << endl;
+		cout << "Prev" << " " << Prev << endl;
+		cout << "Root" << " " << Root.idx() << endl;
+		cout << "Info" << " " << Info.idx() << endl;
+		cout << "----------------" << endl;
+	}
 	int parse(ifstream &readpdf,streamoff off)
 	{
 		string sRes;
