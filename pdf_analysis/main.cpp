@@ -7,7 +7,9 @@
 #include <vector>
 #include "tools.h"
 #include "trailer.h"
+#include "pagetreenode.h"
 #include "catalog.h"
+
 using namespace std;
 
 
@@ -78,6 +80,7 @@ public:
 			}
 			t_key = (sKey == "n");
 			vecCrossRef.push_back(CrossRefItem(t_off, startnum + i, t_generation_num, t_key));
+			vecObj.push_back(NULL);
 			off = off + sKey.size();
 		}
 		endoff = off;
@@ -111,7 +114,23 @@ public:
 	{
 		return this->trailer_;
 	}
-
+	//ÉîËÑpage tree
+	int parsePageRoot()
+	{
+		pageRoot_ = new PageTreeNode;
+		streamoff pageroot_off;
+		int pageroot_idx = catalog_.Pages.idx();
+		pageroot_off = vecCrossRef[pageroot_idx].off;
+		pageRoot_->parse(readpdf_, pageroot_off);
+		for (int i = 0; i < pageRoot_->Kids.arr.size(); i++)
+		{
+			int node_idx = pageRoot_->Kids.arr[i].idx();
+			streamoff node_off  = vecCrossRef[node_idx].off;
+			string sType;
+			pageRoot_->Kids.arr[i].getType(readpdf_, node_off, sType);
+		}
+		return 0;
+	}
 
 //for debug
 	void printCrossTable()
@@ -128,6 +147,10 @@ public:
 	void printCatalog()
 	{
 		catalog_.print();
+	}
+	void printPageTreeNode()
+	{
+		pageRoot_->print();
 	}
 private:
 	
@@ -147,16 +170,18 @@ private:
 		bool key;
 	};
 	vector<CrossRefItem> vecCrossRef;
-	vector<OBJ> vecObj;
+	vector<OBJ *> vecObj;
 	Trailer trailer_;
 	Catalog catalog_;
+	PageTreeNode * pageRoot_;
 };
+
+
 
 
 
 int main()
 {
-	
 	PdfRead pdfread;
 	pdfread.init("F:\\pdf_analysis\\laixukai.pdf");
 	int iRet = 0;
@@ -168,5 +193,7 @@ int main()
 	pdfread.printTrailer();
 	iRet = pdfread.parseCatalog();
 	pdfread.printCatalog();
+	iRet = pdfread.parsePageRoot();
+	pdfread.printPageTreeNode();
 	return 0;
 }

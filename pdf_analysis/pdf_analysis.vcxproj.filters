@@ -38,5 +38,14 @@
     <ClInclude Include="page.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="pagetreenode.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Array.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="rectangle.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

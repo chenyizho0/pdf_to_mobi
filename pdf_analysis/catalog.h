@@ -1,12 +1,13 @@
 #ifndef _CATALOG_H_
 #define _CATALOG_H_
+#include <iostream>
 #include "name.h"
 #include "OBJ.h"
 #include <string>
 #include "tools.h"
-#include <iostream>
+
 using namespace std;
-class Name;
+
 class Catalog
 	:public OBJ
 {
@@ -116,5 +117,4 @@ public:
 	OBJ Collections;
 	bool NeedsRendering;
 };
-
 #endif

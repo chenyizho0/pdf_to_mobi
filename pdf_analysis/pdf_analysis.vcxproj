@@ -81,10 +81,13 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Array.h" />
     <ClInclude Include="catalog.h" />
     <ClInclude Include="Name.h" />
     <ClInclude Include="OBJ.h" />
     <ClInclude Include="page.h" />
+    <ClInclude Include="pagetreenode.h" />
+    <ClInclude Include="rectangle.h" />
     <ClInclude Include="tools.h" />
     <ClInclude Include="trailer.h" />
   </ItemGroup>

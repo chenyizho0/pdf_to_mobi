@@ -4,6 +4,7 @@
 #include <string>
 #include "OBJ.h"
 #include "Name.h"
+#include "Array.h"
 using namespace std;
 
 
@@ -261,6 +262,53 @@ int parseObj(string & sSrc, size_t &startpos, OBJ &obj)
 		}
 	}
 	obj.setIdx(objnum);
+	return 0;
+}
+
+
+int parseArray(string & sSrc, size_t &startpos, Array & a)
+{
+	string sIdx, sGen;
+	OBJ obj;
+	bool b = false;
+	while (startpos < sSrc.size())
+	{
+		sIdx = "";
+		sGen = "";
+		while (startpos < sSrc.size() && (sSrc[startpos] > '9' || sSrc[startpos] < '0'))
+		{
+			if (sSrc[startpos] == ']')
+			{
+				b = true;
+				break;
+			}
+			startpos++;
+		}
+		if (b)break;
+		while (startpos < sSrc.size() && (sSrc[startpos] <= '9' && sSrc[startpos] >= '0'))
+		{
+			sIdx.append(1, sSrc[startpos]);
+			startpos++;
+		}
+		while (startpos < sSrc.size() && (sSrc[startpos] > '9' || sSrc[startpos] < '0'))
+		{
+			if (sSrc[startpos] == ']')
+			{
+				b = true;
+				break;
+			}
+			startpos++;
+		}
+		if (b)break;
+		while (startpos < sSrc.size() && (sSrc[startpos] <= '9' && sSrc[startpos] >= '0'))
+		{
+			sGen.append(1, sSrc[startpos]);
+			startpos++;
+		}
+		obj.setIdx(stringToInt(sIdx));
+		obj.setGeneration(stringToInt(sGen));
+		a.arr.push_back(obj);
+	}
 	return 0;
 }
 
