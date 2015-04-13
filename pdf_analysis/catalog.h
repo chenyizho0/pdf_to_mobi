@@ -12,9 +12,13 @@ class Catalog
 	:public OBJ
 {
 public:
-	int parse(ifstream &readpdf, streamoff off)
+	Catalog()
+		:Pages(NULL)
+	{}
+	int parse(ifstream &readpdf, streamoff & off)
 	{
 		string sRes;
+		char c;
 		//get obj index
 		if (getContent(readpdf, off, sRes, 1000, "", " ", off) != 0)
 		{
@@ -23,7 +27,6 @@ public:
 		}
 		this->setIdx(stringToInt(sRes));
 		off = off + sRes.size() + 1;
-		
 		//get obj generation
 		if (getContent(readpdf, off, sRes, 1000, "", " ", off) != 0)
 		{
@@ -32,28 +35,56 @@ public:
 		}
 		this->setGeneration(stringToInt(sRes));
 		off = off + sRes.size() + 1;
-
 		//parse property
-		if (getContent(readpdf, off, sRes, 1000, "<<", ">>", off) != 0)
+		//可能有bug 未判断文件访问是否越界
+		while (true)
 		{
-			cout << "error" << endl;
-			return -1;
-		}
-		for (size_t i = 0; i < sRes.size(); i++)
-		{
-			if (sRes[i] == '/')
+			readpdf.read((char *)&c, sizeof(c));
+			off++;
+			if (c == '<')
 			{
-				i++;
-				string s;
-				size_t j;
-				for (j = i; sRes[j] != ' '; j++)
+				readpdf.read((char *)&c, sizeof(c));
+				off++;
+				if (c == '<')
 				{
-					s.append(1, sRes[j]);
+					break;
+				}
+				else
+				{
+					cout << "error obj 1" << endl;
+					return -1;
+				}
+			}
+
+		}
+		string s;
+		readpdf.seekg(off, ios_base::beg);
+		while (true)
+		{
+			readpdf.read((char *)&c, sizeof(c));
+			off++;
+			if (c == '>')
+			{
+				readpdf.read((char *)&c, sizeof(c));
+				off++;
+				if (c == '>')
+					break;
+			}
+			if (c == '/')
+			{
+				s = "";
+				readpdf.read((char *)&c, sizeof(c));
+				off++;
+				while (c != ' ' && c != '\n' && c != '\t')
+				{
+					s.append(1, c);
+					readpdf.read((char *)&c, sizeof(c));
+					off++;
 				}
 				if (s == "Pages")
 				{
-					OBJ obj;
-					if (parseObj(sRes, j, obj) != 0)
+					OBJ *obj = new OBJ();
+					if (parseObj(readpdf, off, obj) != 0)
 					{
 						cout << "error" << endl;
 						return -1;
@@ -63,7 +94,7 @@ public:
 				else if (s == "Type")
 				{
 					Name n;
-					if (parseName(sRes, j, n) != 0)
+					if (parseName(readpdf, off, n) != 0)
 					{
 						cout << "error" << endl;
 						return -2;
@@ -73,7 +104,7 @@ public:
 				else
 				{
 				}
-				i = j;
+				readpdf.seekg(off, ios_base::beg);
 			}
 		}
 		return 0;
@@ -83,14 +114,16 @@ public:
 		cout << "---------------" << endl;
 		cout << "Catalog :" << endl;
 		cout << "Type" << " " << Type.name << endl;
-		cout << "Pages" << " " << Pages.idx() << endl;
+		cout << "Pages" << " " << Pages->idx() << endl;
 		cout << "---------------" << endl;
 	}
 public:
 	Name Type;
+	
+	OBJ * Pages;
+	/*
 	Name Version;
-	OBJ Extensions;
-	OBJ Pages;
+	OBJ * Extensions;
 	//NumberTree PageLabels;
 	OBJ Names;
 	OBJ Dests;
@@ -116,5 +149,6 @@ public:
 	//Array Requirements;
 	OBJ Collections;
 	bool NeedsRendering;
+	*/
 };
 #endif

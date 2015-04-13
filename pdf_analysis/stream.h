@@ -1,64 +1,40 @@
-#ifndef _OBJ_H_
-#define _OBJ_H_
-#include <string>
+#ifndef STREAM_H_
+#define STREAM_H_
+
 #include "Name.h"
+#include "OBJ.h"
+#include <string>
 #include "tools.h"
-#include <stack>
 using namespace std;
 
-extern int getContent(ifstream &readpdf, streamoff  off, string &sRes, int maxlen, string sBeg, string sEnd, streamoff &startpos);
-extern int parseName(ifstream &readpdf, streamoff &off, Name & n);
-class OBJ
+class Stream
+	:public OBJ
 {
 public:
-	OBJ()
-		:index(-1), generation(0)
+	Stream()
 	{}
-	OBJ(int i)
-		:index(i)
-	{}
-	void setIdx(int i)
-	{
-		index = i;
-	}
-	void setGeneration(int g)
-	{
-		generation = g;
-	}
-	int Gen()
-	{
-		return generation;
-	}
-	int idx()
-	{
-		return index;
-	}
-	
-	int  getType(ifstream &readpdf, streamoff off,string &sType)
+	int parse(ifstream &readpdf, streamoff & off)
 	{
 		string sRes;
+		char c;
 		//get obj index
 		if (getContent(readpdf, off, sRes, 1000, "", " ", off) != 0)
 		{
 			cout << "error 1" << endl;
 			return -1;
 		}
+		this->setIdx(stringToInt(sRes));
 		off = off + sRes.size() + 1;
-
 		//get obj generation
 		if (getContent(readpdf, off, sRes, 1000, "", " ", off) != 0)
 		{
 			cout << "error 1" << endl;
-			return -2;
+			return -1;
 		}
+		this->setGeneration(stringToInt(sRes));
 		off = off + sRes.size() + 1;
-		char c;
 		//parse property
 		//可能有bug 未判断文件访问是否越界
-
-		//stack 判断<< 和 >> 的匹配情况
-		stack<int> stk;
-
 		while (true)
 		{
 			readpdf.read((char *)&c, sizeof(c));
@@ -69,7 +45,6 @@ public:
 				off++;
 				if (c == '<')
 				{
-					stk.push(1);
 					break;
 				}
 				else
@@ -91,26 +66,8 @@ public:
 				readpdf.read((char *)&c, sizeof(c));
 				off++;
 				if (c == '>')
-				{
-					if (stk.empty())break;
-					else
-					{
-						stk.pop();
-						if (stk.empty())break;
-					}
-				}
+					break;
 			}
-
-			if (c == '<')
-			{
-				readpdf.read((char *)&c, sizeof(c));
-				off++;
-				if (c == '<')
-				{
-					stk.push(1);
-				}
-			}
-
 			if (c == '/')
 			{
 				s = "";
@@ -122,7 +79,8 @@ public:
 					readpdf.read((char *)&c, sizeof(c));
 					off++;
 				}
-				if (s == "Type")
+
+				if (s == "Filter")
 				{
 					Name n;
 					if (parseName(readpdf, off, n) != 0)
@@ -130,8 +88,17 @@ public:
 						cout << "error" << endl;
 						return -2;
 					}
-					sType = n.name;
-					return 0;
+					this->Filter = n;
+				}
+				if (s == "Length")
+				{
+					int i;
+					if (parseInt(readpdf, off, i) != 0)
+					{
+						cout << "error" << endl;
+						return -3;
+					}
+					this->Length = i;
 				}
 				else
 				{
@@ -139,11 +106,24 @@ public:
 				readpdf.seekg(off, ios_base::beg);
 			}
 		}
-		return 0;
+		sRes = "";
+		streamoff startpos;
+		int iRet = getContent(readpdf, off, sRes, 100000, "\nstream", "\nendstream", startpos);
+		this->decodeData = sRes;
+		return iRet;
 	}
-	
-private:
-	int index;
-	int generation;
+
+
+
+public:
+	string decodeData;
+	int Length;
+	Name Filter;
+	//OBJ * DecodeParms;
+	//file specification F;
+	//Name FFilter;
+	//OBJ * FDecodeParms;
+	//int DL;
 };
+
 #endif

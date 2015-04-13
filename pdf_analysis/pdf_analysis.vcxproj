@@ -88,6 +88,9 @@
     <ClInclude Include="page.h" />
     <ClInclude Include="pagetreenode.h" />
     <ClInclude Include="rectangle.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="stream.h" />
+    <ClInclude Include="test.h" />
     <ClInclude Include="tools.h" />
     <ClInclude Include="trailer.h" />
   </ItemGroup>

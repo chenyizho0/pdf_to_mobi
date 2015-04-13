@@ -15,33 +15,70 @@ public:
 		cout << "Trailer :" << endl;
 		cout << "Size" << " " << Size << endl;
 		cout << "Prev" << " " << Prev << endl;
-		cout << "Root" << " " << Root.idx() << endl;
-		cout << "Info" << " " << Info.idx() << endl;
+		cout << "Root" << " " << Root->idx() << endl;
+		cout << "Info" << " " << Info->idx() << endl;
 		cout << "----------------" << endl;
 	}
-	int parse(ifstream &readpdf,streamoff off)
+
+
+
+
+
+	int parse(ifstream &readpdf, streamoff & off)
 	{
 		string sRes;
-		if (getContent(readpdf, off, sRes, 1000, "<<", ">>", off) != 0)
+		char c;
+		readpdf.seekg(off, ios_base::beg);
+		while (true)
 		{
-			cout << "error" << endl;
-			return -1;
-		}
-		for (size_t i = 0; i < sRes.size(); i++)
-		{
-			if (sRes[i] == '/')
+			readpdf.read((char *)&c, sizeof(c));
+			off++;
+			if (c == '<')
 			{
-				i++;
-				string s;
-				size_t j;
-				for (j = i; sRes[j] != ' '; j++)
+				readpdf.read((char *)&c, sizeof(c));
+				off++;
+				if (c == '<')
 				{
-					s.append(1, sRes[j]);
+					break;
 				}
+				else
+				{
+					cout << "error obj 1" << endl;
+					return -1;
+				}
+			}
+
+		}
+		string s;
+		readpdf.seekg(off, ios_base::beg);
+		while (true)
+		{
+			readpdf.read((char *)&c, sizeof(c));
+			off++;
+			if (c == '>')
+			{
+				readpdf.read((char *)&c, sizeof(c));
+				off++;
+				if (c == '>')
+					break;
+			}
+			if (c == '/')
+			{
+				s = "";
+				readpdf.read((char *)&c, sizeof(c));
+				off++;
+				while (c != ' ' && c != '\n' && c != '\t')
+				{
+					s.append(1, c);
+					readpdf.read((char *)&c, sizeof(c));
+					off++;
+				}
+
+
 				if (s == "Size")
 				{
 					int iSize = -1;
-					if (parseInt(sRes, j, iSize) != 0)
+					if (parseInt(readpdf, off, iSize) != 0)
 					{
 						cout << "error" << endl;
 						return -1;
@@ -51,7 +88,7 @@ public:
 				else if (s == "Prev")
 				{
 					int iPrev = -1;
-					if (parseInt(sRes, j, iPrev) != 0)
+					if (parseInt(readpdf, off, iPrev) != 0)
 					{
 						cout << "error" << endl;
 						return -2;
@@ -60,8 +97,8 @@ public:
 				}
 				else if (s == "Root")
 				{
-					OBJ obj;
-					if (parseObj(sRes, j, obj) != 0)
+					OBJ * obj = new OBJ();
+					if (parseObj(readpdf, off, obj) != 0)
 					{
 						cout << "error" << endl;
 						return -3;
@@ -70,8 +107,8 @@ public:
 				}
 				else if (s == "Info")
 				{
-					OBJ obj;
-					if (parseObj(sRes, j, obj) != 0)
+					OBJ * obj = new OBJ();
+					if (parseObj(readpdf, off, obj) != 0)
 					{
 						cout << "error" << endl;
 						return -3;
@@ -81,17 +118,18 @@ public:
 				else
 				{
 				}
-				i = j;
+				readpdf.seekg(off, ios_base::beg);
 			}
 		}
 		return 0;
 	}
+
 	streamoff  crossRefTable_offset;
 	int Size;
 	int Prev;
-	OBJ Root;
+	OBJ * Root;
 	//OBJ Encrypt;
-	OBJ Info;
+	OBJ * Info;
 	//Array ID;
 };
 

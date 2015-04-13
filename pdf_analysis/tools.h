@@ -5,8 +5,15 @@
 #include "OBJ.h"
 #include "Name.h"
 #include "Array.h"
+#include <cstdlib>
+#include "rectangle.h"
 using namespace std;
 
+
+double stringToDouble(string s)
+{
+	return atof(s.c_str());
+}
 
 int stringToInt(string s)
 {
@@ -40,7 +47,7 @@ int getContent(ifstream &readpdf, streamoff  off, string &sRes, int maxlen, stri
 	{
 		if (sBeg == "") //ø…ƒ‹”–bug
 		{
-			iBeg = curoff - 1;
+			iBeg = curoff;
 			break;
 		}
 		readpdf.read((char *)&c, sizeof(c));
@@ -108,7 +115,7 @@ int getContent(ifstream &readpdf, streamoff  off, string &sRes, int maxlen, stri
 	readpdf.seekg(iBeg+sBeg.size(), ios_base::beg);
 	char buf[10000];
 	readpdf.read((char *)buf, iEnd - iBeg - sBeg.size());
-	sRes = sRes.assign(buf, iEnd-iBeg-sBeg.size());
+	sRes = sRes.assign(buf, iEnd - iBeg - sBeg.size());
 	startpos = iBeg;
 	return 0;
 }
@@ -204,106 +211,157 @@ int getContentVer(ifstream &readpdf, streamoff  off, string &sRes, int maxlen, s
 	return 0;
 }
 
-int parseInt(string & sSrc,size_t &startpos,int & iRet)
+int parseInt(ifstream &readpdf, streamoff &off, int & iRet)
 {
-	
+
 	string s;
-	while (startpos < sSrc.size())
+	char c;
+	readpdf.seekg(off, ios_base::beg);
+	while (true)
 	{
-		if (sSrc[startpos] <= '9' && sSrc[startpos] >= '0')
+		readpdf.read((char *)&c, sizeof(c));
+		off++;
+		if (c <= '9' && c >= '0')
 			break;
-		startpos++;
 	}
-	while (startpos < sSrc.size())
+	while (true)
 	{
-		if (sSrc[startpos] <= '9' && sSrc[startpos] >= '0')
+		if (c <= '9' && c >= '0')
 		{
-			s.append(1, sSrc[startpos]);
+			s.append(1, c);
+			readpdf.read((char *)&c, sizeof(c));
+			off++;
 		}
 		else
 		{
 			break;
 		}
-		startpos++;
 	}
 	iRet = stringToInt(s);
 	return 0;
 }
 
-int parseObj(string & sSrc, size_t &startpos, OBJ &obj)
+
+int parseObj(ifstream &readpdf, streamoff &off, OBJ *obj)
 {
+	char c;
 	int objnum = -1;
-	if (parseInt(sSrc, startpos, objnum) != 0)
+	if (parseInt(readpdf, off, objnum) != 0)
 	{
 		cout << "error" << endl;
 		return -1;
 	}
 	int generation_num = -1;
-	if (parseInt(sSrc, startpos, generation_num) != 0)
+	if (parseInt(readpdf, off, generation_num) != 0)
 	{
 		cout << "error" << endl;
 		return -2;
 	}
-	while (startpos < sSrc.size())
+	readpdf.seekg(off, ios_base::beg);
+	while (true)
 	{
-		if (sSrc[startpos] == ' ')
+		readpdf.read((char *)&c, sizeof(c));
+		off++;
+		if (c == ' ')
 		{
-			startpos++;
 		}
-		else if (sSrc[startpos] != 'R')
+		else if (c != 'R')
 		{
 			cout << "error not R" << endl;
 			return -3;
 		}
 		else
 		{
-			startpos++;
 			break;
 		}
 	}
-	obj.setIdx(objnum);
+	obj->setIdx(objnum);
+	obj->setGeneration(generation_num);
+	return 0;
+}
+
+int parseName(ifstream &readpdf, streamoff &off, Name & n)
+{
+	n.name = "";
+	string s;
+	char c;
+	readpdf.seekg(off, ios_base::beg);
+	while (true)
+	{
+		readpdf.read((char *)&c, sizeof(c));
+		off++;
+		if (c != ' ' && c != '\n' && c != '\t')
+			break;
+	}
+	string tmpName;
+	while (true)
+	{
+		readpdf.read((char *)&c, sizeof(c));
+		off++;
+		if (c == ' ' || c == '\n' || c == '\t')
+		{
+			break;
+		}
+		else
+		{
+			if (c != '/')
+			{
+				tmpName.append(1, c);
+			}
+		}
+	}
+	n.name = tmpName;
 	return 0;
 }
 
 
-int parseArray(string & sSrc, size_t &startpos, Array & a)
+
+int parseArray(ifstream &readpdf, streamoff &off, Array & a)
 {
+	char c;
 	string sIdx, sGen;
-	OBJ obj;
+	OBJ  obj;
 	bool b = false;
-	while (startpos < sSrc.size())
+	readpdf.seekg(off, ios_base::beg);
+	while (true)
 	{
 		sIdx = "";
 		sGen = "";
-		while (startpos < sSrc.size() && (sSrc[startpos] > '9' || sSrc[startpos] < '0'))
+		readpdf.read((char *)&c, sizeof(c));
+		off++;
+		while (c > '9' || c < '0')
 		{
-			if (sSrc[startpos] == ']')
+			if (c == ']')
 			{
 				b = true;
 				break;
 			}
-			startpos++;
+			readpdf.read((char *)&c, sizeof(c));
+			off++;
 		}
 		if (b)break;
-		while (startpos < sSrc.size() && (sSrc[startpos] <= '9' && sSrc[startpos] >= '0'))
+		while (c <= '9' && c >= '0')
 		{
-			sIdx.append(1, sSrc[startpos]);
-			startpos++;
+			sIdx.append(1, c);
+			readpdf.read((char *)&c, sizeof(c));
+			off++;
 		}
-		while (startpos < sSrc.size() && (sSrc[startpos] > '9' || sSrc[startpos] < '0'))
+		while (c > '9' || c < '0')
 		{
-			if (sSrc[startpos] == ']')
+			if (c == ']')
 			{
 				b = true;
 				break;
 			}
-			startpos++;
+			readpdf.read((char *)&c, sizeof(c));
+			off++;
 		}
 		if (b)break;
-		while (startpos < sSrc.size() && (sSrc[startpos] <= '9' && sSrc[startpos] >= '0'))
+		while (c <= '9' && c >= '0')
 		{
-			sGen.append(1, sSrc[startpos]);
-			startpos++;
+			sGen.append(1, c);
+			readpdf.read((char *)&c, sizeof(c));
+			off++;
 		}
 		obj.setIdx(stringToInt(sIdx));
 		obj.setGeneration(stringToInt(sGen));
@@ -312,32 +370,40 @@ int parseArray(string & sSrc, size_t &startpos, Array & a)
 	return 0;
 }
 
-int parseName(string & sSrc, size_t &startpos, Name & n)
+int parseRect(ifstream &readpdf, streamoff &off, Rectangle & r)
 {
-	n.name = "";
 	string s;
-	while (startpos < sSrc.size())
+	char c;
+	double d[4] = { 0, 0, 0, 0 };
+	readpdf.seekg(off, ios_base::beg);
+	for (int i = 0; i < 4; i++)
 	{
-		if (sSrc[startpos] != ' ' && sSrc[startpos] != '\n' && sSrc[startpos] != '\t')
-			break;
-		startpos++;
-	}
-	string tmpName;
-	for (; startpos < sSrc.size(); startpos++)
-	{
-		if (sSrc[startpos] == ' ' || sSrc[startpos] == '\n' || sSrc[startpos] == '\t')
+		while (true)
 		{
-			break;
+			readpdf.read((char *)&c, sizeof(c));
+			off++;
+			if ((c <= '9' && c >= '0') || (c == '.'))
+				break;
 		}
-		else
+		while (true)
 		{
-			if (sSrc[startpos] != '/')
+			if ((c <= '9' && c >= '0') || (c == '.'))
 			{
-				tmpName.append(1, sSrc[startpos]);
+				s.append(1, c);
+				readpdf.read((char *)&c, sizeof(c));
+				off++;
+			}
+			else
+			{
+				break;
 			}
 		}
+		d[i] = stringToDouble(s);
 	}
-	n.name = tmpName;
+	r.ll_x = d[0];
+	r.ll_y = d[1];
+	r.ur_x = d[2];
+	r.ur_y = d[3];
 	return 0;
 }
 

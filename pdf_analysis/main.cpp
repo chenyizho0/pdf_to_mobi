@@ -9,6 +9,9 @@
 #include "trailer.h"
 #include "pagetreenode.h"
 #include "catalog.h"
+#include "test.h"
+#include "page.h"
+#include "stream.h"
 
 using namespace std;
 
@@ -105,34 +108,99 @@ public:
 	}
 	int parseCatalog()
 	{
+		catalog_ = new Catalog();
 		streamoff catalog_off;
-		int catalog_idx = trailer_.Root.idx();
+		int catalog_idx = trailer_.Root->idx();
 		catalog_off = vecCrossRef[catalog_idx].off;
-		return catalog_.parse(readpdf_,catalog_off);
+		int iRet = catalog_->parse(readpdf_,catalog_off);
+		vecObj[catalog_idx] = catalog_;
+		return iRet;
 	}
 	Trailer getTrailer()
 	{
 		return this->trailer_;
 	}
 	//ÉîËÑpage tree
-	int parsePageRoot()
+	int parsePageTree()
 	{
-		pageRoot_ = new PageTreeNode;
+		OBJ *obj = new OBJ();
 		streamoff pageroot_off;
-		int pageroot_idx = catalog_.Pages.idx();
-		pageroot_off = vecCrossRef[pageroot_idx].off;
-		pageRoot_->parse(readpdf_, pageroot_off);
-		for (int i = 0; i < pageRoot_->Kids.arr.size(); i++)
-		{
-			int node_idx = pageRoot_->Kids.arr[i].idx();
-			streamoff node_off  = vecCrossRef[node_idx].off;
-			string sType;
-			pageRoot_->Kids.arr[i].getType(readpdf_, node_off, sType);
-		}
+		obj->setIdx(catalog_->Pages->idx());
+		parsePageTreeNode(obj);
+		pageRoot_ = (PageTreeNode*) vecObj[catalog_->Pages->idx()];
 		return 0;
 	}
+	void parsePageTreeNode(OBJ * node)
+	{
+		if (node == NULL)return;
+		int node_idx = node->idx();
+		streamoff node_off = vecCrossRef[node_idx].off;
+		string sType;
+		node->getType(readpdf_, node_off, sType);
+		if (sType == "Page")
+		{
+			Page * p = new Page();
+			p->parse(readpdf_, node_off);
+			vecObj[node_idx] = p;
+			int cont_idx = p->Contents->idx();
+			node_off = vecCrossRef[cont_idx].off;
+			Stream * cont = new Stream();
+			cont->parse(readpdf_, node_off);
+			vecObj[cont_idx] = cont;
+			cout << cont->decodeData << endl;
+			return;
+		}
+		if (sType == "Pages")
+		{
+			PageTreeNode * pt = new PageTreeNode();
+			pt->parse(readpdf_, node_off);
+			vecObj[node_idx] = pt;
+			for (int i = 0; i < pt->Kids.arr.size(); i++)
+			{
+				node_idx = pt->Kids.arr[i].idx();
+				OBJ * obj = new OBJ();
+				obj->setIdx(node_idx);
+				parsePageTreeNode(obj);
+			}
+		}
+		return;
+	}
+
 
 //for debug
+	void printTree()
+	{
+		printTreeNode(pageRoot_);
+	}
+	void printTreeNode(OBJ * node)
+	{
+		if (node == NULL)
+		{
+			return;
+		}
+		string sType;
+		int node_idx = node->idx();
+		streamoff node_off = vecCrossRef[node_idx].off;
+		node->getType(readpdf_, node_off, sType);
+		//cout << "fuck" << node->idx() << " " << sType << endl;
+		if (sType == "Page")
+		{
+			Page * p = (Page*)node;
+			p->print();
+			return;
+		}
+		if (sType == "Pages")
+		{
+			PageTreeNode * pt = (PageTreeNode *)vecObj[node_idx];
+			for (int i = 0; i < pt->Kids.arr.size(); i++)
+			{
+				node_idx = pt->Kids.arr[i].idx();
+				printTreeNode(vecObj[node_idx]);
+			}
+			return;
+
+		}
+	}
 	void printCrossTable()
 	{
 		for (int i = 0; i < vecCrossRef.size(); i++)
@@ -146,7 +214,7 @@ public:
 	}
 	void printCatalog()
 	{
-		catalog_.print();
+		catalog_->print();
 	}
 	void printPageTreeNode()
 	{
@@ -172,7 +240,8 @@ private:
 	vector<CrossRefItem> vecCrossRef;
 	vector<OBJ *> vecObj;
 	Trailer trailer_;
-	Catalog catalog_;
+	Catalog * catalog_;
+
 	PageTreeNode * pageRoot_;
 };
 
@@ -193,7 +262,7 @@ int main()
 	pdfread.printTrailer();
 	iRet = pdfread.parseCatalog();
 	pdfread.printCatalog();
-	iRet = pdfread.parsePageRoot();
-	pdfread.printPageTreeNode();
+	iRet = pdfread.parsePageTree();
+	pdfread.printTree();
 	return 0;
 }
