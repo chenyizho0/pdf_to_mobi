@@ -5,6 +5,7 @@
 #include "OBJ.h"
 #include <string>
 #include "tools.h"
+#include "zlib.h"
 using namespace std;
 
 class Stream
@@ -108,14 +109,37 @@ public:
 		}
 		sRes = "";
 		streamoff startpos;
-		int iRet = getContent(readpdf, off, sRes, 100000, "\nstream", "\nendstream", startpos);
-		this->decodeData = sRes;
+		int iRet = getContent(readpdf, off, sRes, 100000, "stream\r\n", "endstream", startpos);
+		if (iRet != 0)return iRet;
+		this->encodeData = sRes;
+		iRet = this->decode(encodeData, this->decodeData);
 		return iRet;
+	}
+	int decode(const string & sSrc, string & sDst)
+	{
+		//解压后大小不清楚。。。。
+		uLongf destLen = sSrc.size() * 13;
+		Bytef * dest = new Bytef[destLen];
+		Bytef * pSrc = new Bytef[sSrc.size()];
+		for (int i = 0; i < sSrc.size(); i++)
+		{
+			pSrc[i] = sSrc[i];
+		}
+		if (this->Filter.name == "FlateDecode")
+		{
+			uncompress(dest, &destLen, pSrc, sSrc.size());
+		}
+		sDst = "";
+		sDst.assign((const char *)dest, destLen);
+		delete[] dest;
+		delete[] pSrc;
+		return 0;
 	}
 
 
 
 public:
+	string encodeData;
 	string decodeData;
 	int Length;
 	Name Filter;

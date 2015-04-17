@@ -91,15 +91,16 @@ public:
 	}
 	int getCrossRef_Offset()
 	{
-		streamoff off = -1;
+		streamoff off = -3;
 		string sCrossRef_off;
 		if (getContentVer(readpdf_, off, sCrossRef_off, 1000, "\n", "\n",off) != 0)
 		{
 			cout << "error" << endl;
 			return -1;
 		}
+		cout << sCrossRef_off << endl;
 		crossRefTable_offset = stringToInt(sCrossRef_off);
-		cout << crossRefTable_offset << endl;
+		cout <<  crossRefTable_offset << endl;
 		return 0;
 	}
 	int parseTrailer(streamoff traileroff)
@@ -134,6 +135,7 @@ public:
 	{
 		if (node == NULL)return;
 		int node_idx = node->idx();
+		cout << "this->" << node_idx << endl;
 		streamoff node_off = vecCrossRef[node_idx].off;
 		string sType;
 		node->getType(readpdf_, node_off, sType);
@@ -147,6 +149,7 @@ public:
 			Stream * cont = new Stream();
 			cont->parse(readpdf_, node_off);
 			vecObj[cont_idx] = cont;
+			cout << "page " << node_idx << endl << endl << endl << endl << endl;
 			cout << cont->decodeData << endl;
 			return;
 		}
@@ -182,7 +185,6 @@ public:
 		int node_idx = node->idx();
 		streamoff node_off = vecCrossRef[node_idx].off;
 		node->getType(readpdf_, node_off, sType);
-		//cout << "fuck" << node->idx() << " " << sType << endl;
 		if (sType == "Page")
 		{
 			Page * p = (Page*)node;
@@ -220,7 +222,13 @@ public:
 	{
 		pageRoot_->print();
 	}
-private:
+	int testGetContent(streamoff off, string a,string b)
+	{
+		string sRes;
+		getContent(readpdf_, off, sRes, 1000, a, b, off);
+		cout << sRes << endl;
+		return 0;
+	}
 	
 private:
 	ifstream readpdf_;
@@ -252,17 +260,18 @@ private:
 int main()
 {
 	PdfRead pdfread;
-	pdfread.init("F:\\pdf_analysis\\laixukai.pdf");
+	//pdfread.init("F:\\pdf_analysis\\laixukai.pdf");
+	pdfread.init("C:\\Users\\chenyizho\\Desktop\\Jorge Luis Borges - Collection.pdf");
 	int iRet = 0;
 	streamoff off;
 	iRet = pdfread.getCrossRef_Offset();
 	iRet = pdfread.readCrossRefTable(off);
-	pdfread.printCrossTable();
+	//pdfread.printCrossTable();
 	iRet = pdfread.parseTrailer(off);
 	pdfread.printTrailer();
 	iRet = pdfread.parseCatalog();
 	pdfread.printCatalog();
 	iRet = pdfread.parsePageTree();
-	pdfread.printTree();
+	//pdfread.printTree();
 	return 0;
 }

@@ -113,15 +113,11 @@ public:
 				}
 				else if (s == "Resources")
 				{
-					/*
-					OBJ *obj = new OBJ();
-					if (parseObj(readpdf, off, obj) != 0)
+					if (parseUnknownObj(readpdf, off) != 0)
 					{
 						cout << "error" << endl;
 						return -1;
 					}
-					this->Parent = obj;
-					*/
 				}
 				else if (s == "MediaBox")
 				{
@@ -139,6 +135,11 @@ public:
 				readpdf.seekg(off, ios_base::beg);
 			}
 		}
+		if (readpdf.fail())
+		{
+			cout << "page fail" << endl;
+			return -7;
+		}
 		return 0;
 	}
 
@@ -154,7 +155,6 @@ public:
 		if (Parent != NULL)cout << Parent->idx();
 		cout << endl;
 		cout << "MediaBox " << MediaBox.ll_x << " " << MediaBox.ll_y << " " << MediaBox.ur_x << " " << MediaBox.ur_y << endl;
-		if (Contents != NULL)cout << Contents->idx();
 		cout << "---------------" << endl;
 	}
 

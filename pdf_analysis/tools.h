@@ -39,6 +39,11 @@ int stringToInt(string s)
 
 int getContent(ifstream &readpdf, streamoff  off, string &sRes, int maxlen, string sBeg, string sEnd,streamoff &startpos)
 {
+	if (readpdf.fail())
+	{
+		cout << "read file fail" << endl;
+		return -5;
+	}
 	readpdf.seekg(off, ios_base::beg);
 	char c;
 	streamoff iBeg = -1;
@@ -378,6 +383,7 @@ int parseRect(ifstream &readpdf, streamoff &off, Rectangle & r)
 	readpdf.seekg(off, ios_base::beg);
 	for (int i = 0; i < 4; i++)
 	{
+		s = "";
 		while (true)
 		{
 			readpdf.read((char *)&c, sizeof(c));
@@ -404,6 +410,83 @@ int parseRect(ifstream &readpdf, streamoff &off, Rectangle & r)
 	r.ll_y = d[1];
 	r.ur_x = d[2];
 	r.ur_y = d[3];
+	return 0;
+}
+
+
+int parseUnknownObj(ifstream &readpdf, streamoff &off)
+{
+	stack<int> stk;
+	readpdf.seekg(off, ios_base::beg);
+	char c;
+	while (true)
+	{
+		readpdf.read((char *)&c, sizeof(c));
+		off++;
+		if (c != ' ' && c != '\t' && c != '\n')
+			break;
+	}
+	if (c != '<')
+	{
+		return -1;
+	}
+	else
+	{
+		readpdf.read((char *)&c, sizeof(c));
+		off++;
+		if (c == '<')
+		{
+			stk.push(1);
+		}
+		else
+		{
+			return -2;
+		}
+	}
+	while (true)
+	{
+		readpdf.read((char *)&c, sizeof(c));
+		off++;
+		if (c == '<')
+		{
+			readpdf.read((char *)&c, sizeof(c));
+			off++;
+			if (c == '<')
+			{
+				stk.push(1);
+			}
+			else
+			{
+				off--;
+				readpdf.seekg(off, ios_base::beg);
+			}
+		}
+		else if (c == '>')
+		{
+			readpdf.read((char *)&c, sizeof(c));
+			off++;
+			if (c == '>')
+			{
+				if (!stk.empty())
+				{
+					stk.pop();
+					if (stk.empty())
+					{
+						return 0;
+					}
+				}
+				else
+				{
+					return 0;
+				}
+			}
+			else
+			{
+				off--;
+				readpdf.seekg(off, ios_base::beg);
+			}
+		}
+	}
 	return 0;
 }
 

@@ -44,7 +44,6 @@ public:
 			return -1;
 		}
 		off = off + sRes.size() + 1;
-
 		//get obj generation
 		if (getContent(readpdf, off, sRes, 1000, "", " ", off) != 0)
 		{
